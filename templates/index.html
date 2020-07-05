@@ -7,92 +7,46 @@
 <div id='header'>
 	<h1>MaskOn</h1>
 </div>
-<div>
-	<p id="buttons">
-		<button id="btnStart">START RECORDING</button>
-		<button id="btnStop">STOP RECORDING</button>
-	</p>
-			
-	<video controls class="videoElement"></video>
-	<video controls id="vid2" class="videoElement"></video>
-</div>
-<script>
-        //no audio, takes video facing user (webcam)
-        let constraintObj = { 
-            audio: false, 
-            video: { 
-                facingMode: "user"
-            } 
-        };
-        
-        //handle older browsers that might implement getUserMedia in some way
-        if (navigator.mediaDevices === undefined) {
-            navigator.mediaDevices = {};
-            navigator.mediaDevices.getUserMedia = function(constraintObj) {
-                let getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-                if (!getUserMedia) {
-                    return Promise.reject(new Error('getUserMedia is not implemented in this browser'));
-                }
-                return new Promise(function(resolve, reject) {
-                    getUserMedia.call(navigator, constraintObj, resolve, reject);
-                });
-            }
-        } else {
-            navigator.mediaDevices.enumerateDevices()
-            .then(devices => {
-                devices.forEach(device=>{
-                    console.log(device.kind.toUpperCase(), device.label);
-                    //, device.deviceId
-                })
-            })
-            .catch(err=>{
-                console.log(err.name, err.message);
-            })
-        }
+	<div id="camera" style="height:auto; width:auto; text-align:left;"></div>
 
-        navigator.mediaDevices.getUserMedia(constraintObj)
-        .then(function(mediaStreamObj) {
-            //connect the media stream to the first video element
-            let video = document.querySelector('video');
-            if ("srcObject" in video) {
-                video.srcObject = mediaStreamObj;
-            } else {
-                //old version
-                video.src = window.URL.createObjectURL(mediaStreamObj);
-            }
-            
-            video.onloadedmetadata = function(ev) {
-                //show in the video element what is being captured by the webcam
-                video.play();
-            };
-            
-            //add listeners for saving video/audio
-            let start = document.getElementById('btnStart');
-            let stop = document.getElementById('btnStop');
-            let vidSave = document.getElementById('vid2');
-            let mediaRecorder = new MediaRecorder(mediaStreamObj);
-            let chunks = [];
-            
-            start.addEventListener('click', (ev)=>{
-                mediaRecorder.start();
-                console.log(mediaRecorder.state);
-            })
-            stop.addEventListener('click', (ev)=>{
-                mediaRecorder.stop();
-                console.log(mediaRecorder.state);
-            });
-            mediaRecorder.ondataavailable = function(ev) {
-                chunks.push(ev.data);
-            }
-            mediaRecorder.onstop = (ev)=>{
-                let blob = new Blob(chunks, { 'type' : 'video/mp4;' });
-                chunks = [];
-                let videoURL = window.URL.createObjectURL(blob);
-                vidSave.src = videoURL;
-            }
-        })
-        .catch(function(err) { 
-            console.log(err.name, err.message); 
-        });	
+	<!--FOR THE SNAPSHOT-->
+	<form id='imgform' method="get" target="dummyframe">
+		<input id='imgdata' type='hidden' value="" name="imgdata">
+		<input type="submit" value="Take a Snap" id="btPic" onclick="takeSnapShot()" /> 
+		<p id="snapShot"></p>
+	</form>
+	
+	<p id='dta'></p>
+</div>
+<script type="text/javascript">
+	Webcam.set({
+        width: 256,
+        height: 256,
+        image_format: 'png'
+    });
+    Webcam.attach('#camera');
+    let runCam = false;
+    function changetoTrue(){
+        runCam = true;
+    }
+    // SHOW THE SNAPSHOT.
+    let takeSnapShot = function () {
+			
+		Webcam.snap(function (data_uri) {
+			console.log(data_uri)
+		
+			document.getElementById('snapShot').innerHTML = 
+				'<img src="' + data_uri + '" width="70px" height="50px" />';
+
+			 document.getElementById('imgdata').value = '' + data_uri + '';
+			 document.getElementById('imgform').submit();
+			 
+			 
+			document.getElementById('dta').innerHTML = '{{dta}}';
+			
+		});
+		
+    }
+	 
 </script>
 {% endblock %}
